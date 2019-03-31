@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/minio/dsync"
 	"strconv"
 	"github.com/hashicorp/go-msgpack/codec"
 	"sync"
@@ -10,8 +9,6 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"net/http"
-	"net/rpc"
 	"os"
 	"os/exec"
 	"strings"
@@ -225,7 +222,6 @@ func addVoter() {
 
 func main() {
 	numInitialNodes := 3
-	lockClients := []dsync.NetLocker{}
 
 	strPort := os.Args[2]
 	port, err := strconv.ParseInt(strPort, 10, 32)
@@ -242,22 +238,8 @@ func main() {
 	rpcAddr := fmt.Sprintf("10.0.0.155:%d", dsyncPort)
 	raftAddr := fmt.Sprintf("10.0.0.155:%d", raftPort)
 
-	go func() {
-		lockServer := &lock.LockServer{}
-		rpcServer := rpc.NewServer()
-		rpcServer.RegisterName("Dsync", lockServer)
-		rpcServer.HandleHTTP("/", "/_debug")
-
-		listener, err := net.Listen("tcp", rpcAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Println("LockServer listening at ", rpcAddr)
-		http.Serve(listener, nil)
-	} ()
-
-	lockClients = append(lockClients, lock.NewClient(rpcAddr))
+	leaderLock := lock.NewLock(rpcAddr, numInitialNodes)
+	leaderLock.AddNode(lock.NewClient(rpcAddr))
 
 	addr, err := net.ResolveTCPAddr("tcp", raftAddr)
 	if err != nil {
@@ -309,7 +291,8 @@ func main() {
 				}
 
 				if ! bootstrapped {
-					lockClients = append(lockClients, lock.NewClient(fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 2)))
+					memberRpcAddr := fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 2)
+					leaderLock.AddNode(lock.NewClient(memberRpcAddr))
 				} else if leader {
 					memberAddr := raft.ServerAddress(fmt.Sprintf("%s:%d", member.Addr, member.Port + 1))
 					if err := r.AddVoter(raft.ServerID(member.Name), memberAddr, 0, 5 * time.Second).Error(); err != nil {
@@ -318,18 +301,16 @@ func main() {
 				}
 			}
 
-			if bootstrapped || len(lockClients) < numInitialNodes {
+			if bootstrapped {
 				continue
 			}
 
-			ds, err := dsync.New(lockClients, 0)
+			lockAcquired, err := leaderLock.Lock()
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			dm := dsync.NewDRWMutex("test", ds)
-
-			if dm.GetLockNonBlocking("abc", "def") {
+			if lockAcquired {
 				err = r.BootstrapCluster(raft.Configuration{
 					Servers: []raft.Server{
 						{
