@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/minio/dsync"
 	"strconv"
 	"github.com/hashicorp/go-msgpack/codec"
 	"sync"
@@ -9,6 +10,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/http"
+	"net/rpc"
 	"os"
 	"os/exec"
 	"strings"
@@ -19,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"github.com/hashicorp/serf/serf"
 	"github.com/hashicorp/raft"
+	"github.com/justinbarrick/zeroconf-k8s/pkg/lock"
 )
 
 func writeConfig(objs... runtime.Object) (string, error) {
@@ -179,6 +183,7 @@ type MockSnapshot struct {
 func (m *MockFSM) Apply(log *raft.Log) interface{} {
 	m.Lock()
 	defer m.Unlock()
+	fmt.Println("applying", log.Data)
 	m.logs = append(m.logs, log.Data)
 	return len(m.logs)
 }
@@ -214,8 +219,45 @@ func (m *MockSnapshot) Persist(sink raft.SnapshotSink) error {
 func (m *MockSnapshot) Release() {
 }
 
+func addVoter() {
+
+}
+
 func main() {
-	raftAddr := fmt.Sprintf("%s:%s", "10.0.0.155", os.Args[3])
+	numInitialNodes := 3
+	lockClients := []dsync.NetLocker{}
+
+	strPort := os.Args[2]
+	port, err := strconv.ParseInt(strPort, 10, 32)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	nodeName := os.Args[1]
+
+	serfPort := port
+	raftPort := port + 1
+	dsyncPort := port + 2
+
+	rpcAddr := fmt.Sprintf("10.0.0.155:%d", dsyncPort)
+	raftAddr := fmt.Sprintf("10.0.0.155:%d", raftPort)
+
+	go func() {
+		lockServer := &lock.LockServer{}
+		rpcServer := rpc.NewServer()
+		rpcServer.RegisterName("Dsync", lockServer)
+		rpcServer.HandleHTTP("/", "/_debug")
+
+		listener, err := net.Listen("tcp", rpcAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		log.Println("LockServer listening at ", rpcAddr)
+		http.Serve(listener, nil)
+	} ()
+
+	lockClients = append(lockClients, lock.NewClient(rpcAddr))
 
 	addr, err := net.ResolveTCPAddr("tcp", raftAddr)
 	if err != nil {
@@ -231,30 +273,27 @@ func main() {
 	store := raft.NewInmemStore()
 
 	raftConfig := raft.DefaultConfig()
-	raftConfig.LocalID = raft.ServerID("hello")
+	raftConfig.LocalID = raft.ServerID(nodeName)
 
-	r, err := raft.NewRaft(raftConfig,
-		&MockFSM{}, store, store, snapshotStore, t)
+	r, err := raft.NewRaft(raftConfig, &MockFSM{}, store, store, snapshotStore, t)
 	if err != nil {
 		log.Fatal("bootstrapping raft: ", err)
-	}
-
-	serfPort, err := strconv.ParseInt(os.Args[2], 10, 64)
-	if err != nil {
-		log.Fatal(err)
 	}
 
 	events := make(chan serf.Event)
 	serfConfig := serf.DefaultConfig()
 	serfConfig.MemberlistConfig.BindPort = int(serfPort)
 	serfConfig.MemberlistConfig.AdvertisePort = int(serfPort)
-	serfConfig.NodeName = os.Args[1]
+	serfConfig.NodeName = nodeName
 	serfConfig.EventCh = events
 
-	bootstrapped := false
-	raftBootstrap := raft.Configuration{
-		Servers: []raft.Server{},
+	s, err := serf.Create(serfConfig)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	bootstrapped := false
+	leader := false
 
 	go func() {
 		for event := range events {
@@ -265,45 +304,79 @@ func main() {
 			for _, member := range event.(serf.MemberEvent).Members {
 				fmt.Println("MEMBER JOINED", member.Name, member.Addr, member.Port)
 
+				if member.Name == nodeName {
+					continue
+				}
+
 				if ! bootstrapped {
-					raftBootstrap.Servers = append(raftBootstrap.Servers, raft.Server{
-						Suffrage: raft.Voter,
-						ID: raft.ServerID(member.Name),
-						Address: raft.ServerAddress(fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 1)),
-					})
-					continue
+					lockClients = append(lockClients, lock.NewClient(fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 2)))
+				} else if leader {
+					memberAddr := raft.ServerAddress(fmt.Sprintf("%s:%d", member.Addr, member.Port + 1))
+					if err := r.AddVoter(raft.ServerID(member.Name), memberAddr, 0, 5 * time.Second).Error(); err != nil {
+						log.Fatal("error adding member", err)
+					}
 				}
-
-/*
-				if member.Name == serfConfig.NodeName {
-					continue
-				}
-
-				if err := r.AddVoter(raft.ServerID(member.Name), raft.ServerAddress(member.Addr.String()), 0, 5 * time.Second).Error(); err != nil {
-					fmt.Println(err)
-				}
-*/
 			}
 
-			if ! bootstrapped && len(raftBootstrap.Servers) > 2 {
-				if err := r.BootstrapCluster(raftBootstrap).Error(); err != nil {
-					log.Fatal("error bootstrapping raft: ", err)
+			if bootstrapped || len(lockClients) < numInitialNodes {
+				continue
+			}
+
+			ds, err := dsync.New(lockClients, 0)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			dm := dsync.NewDRWMutex("test", ds)
+
+			if dm.GetLockNonBlocking("abc", "def") {
+				err = r.BootstrapCluster(raft.Configuration{
+					Servers: []raft.Server{
+						{
+							ID:      raft.ServerID(nodeName),
+							Address: raft.ServerAddress(fmt.Sprintf("10.0.0.155:%d", raftPort)),
+						},
+					},
+				}).Error()
+				if err != nil {
+					log.Fatal("error bootstrapping initial leader", err)
 				}
 
-				bootstrapped = true
+				acquiredLeader := <-r.LeaderCh()
+				if ! acquiredLeader {
+					log.Fatal("!!! SOMETHING BAD HAPPENED")
+				}
+
+				fmt.Println("we are leader")
+
+				for _, member := range s.Members() {
+					if member.Name == nodeName {
+						continue
+					}
+
+					memberAddr := raft.ServerAddress(fmt.Sprintf("%s:%d", member.Addr, member.Port + 1))
+					if err := r.AddVoter(raft.ServerID(member.Name), memberAddr, 0, 5 * time.Second).Error(); err != nil {
+						log.Fatal("error adding member", err)
+					}
+
+					fmt.Println("ADDED MEMBER", member.Addr, member.Port, member.Name)
+				}
+
+				if err := r.Apply([]byte("hello world"), 5 * time.Second).Error(); err != nil {
+					log.Fatal("error writing to raft", err)
+				}
+
+				leader = true
+			} else {
+				fmt.Println("we are follower")
 			}
+
+			bootstrapped = true
 		}
 	}()
 
-	fmt.Println(r)
-
-	s, err := serf.Create(serfConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for {
-		if _, err := s.Join(os.Args[4:], false); err != nil {
+		if _, err := s.Join(os.Args[3:], false); err != nil {
 			log.Println(err)
 			time.Sleep(2 * time.Second)
 			continue

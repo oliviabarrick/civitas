@@ -2,12 +2,15 @@ module github.com/justinbarrick/zeroconf-k8s
 
 go 1.12
 
+replace github.com/minio/dsync => /home/user/src/dsync
+
 require (
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/hashicorp/raft v1.0.0 // indirect
 	github.com/hashicorp/serf v0.8.2 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
+	github.com/minio/dsync v0.0.0-20190131060523-fb604afd87b2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
