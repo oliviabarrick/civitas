@@ -2,7 +2,7 @@ module github.com/justinbarrick/zeroconf-k8s
 
 go 1.12
 
-replace github.com/minio/dsync => /home/user/src/dsync
+replace github.com/minio/dsync => github.com/justinbarrick/dsync v0.0.0-20190331203947-a9d0969e8479
 
 require (
 	github.com/gogo/protobuf v1.2.1 // indirect
