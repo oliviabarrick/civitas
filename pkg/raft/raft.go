@@ -1,13 +1,13 @@
 package raft
 
 import (
-	"io/ioutil"
 	"errors"
 	"fmt"
-	"log"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/raft"
 	"io"
+	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"sync"
@@ -17,7 +17,7 @@ import (
 type FSM struct {
 	sync.Mutex
 	logCh chan []byte
-	logs [][]byte
+	logs  [][]byte
 }
 
 type Snapshot struct {
@@ -73,9 +73,9 @@ type Raft struct {
 	Name       string
 	ListenAddr string
 	raft       *raft.Raft
-	fsm *FSM
+	fsm        *FSM
 	notifyCh   chan bool
-	added map[string]bool
+	added      map[string]bool
 }
 
 func NewRaft(name, listenAddr string, port int) (*Raft, error) {
@@ -124,11 +124,11 @@ func (r *Raft) Start() error {
 	return err
 }
 
-func (r *Raft) LogChannel() (chan []byte) {
+func (r *Raft) LogChannel() chan []byte {
 	return r.fsm.logCh
 }
 
-func (r *Raft) NotifyChannel() (chan bool) {
+func (r *Raft) NotifyChannel() chan bool {
 	return r.notifyCh
 }
 

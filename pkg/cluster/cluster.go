@@ -99,11 +99,11 @@ func (c *Cluster) Send(obj interface{}) error {
 	return c.raft.Apply(data)
 }
 
-func (c *Cluster) LogChannel() (chan []byte) {
+func (c *Cluster) LogChannel() chan []byte {
 	return c.raft.LogChannel()
 }
 
-func (c *Cluster) NotifyChannel() (chan bool) {
+func (c *Cluster) NotifyChannel() chan bool {
 	return c.raft.NotifyChannel()
 }
 

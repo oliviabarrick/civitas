@@ -2,28 +2,28 @@ package kubeadm
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
-	"math/rand"
-	"time"
-	"log"
+	"github.com/justinbarrick/zeroconf/pkg/cluster"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kjson "k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"encoding/json"
 	kubeadm "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1"
+	"log"
+	"math/rand"
 	"os"
 	"os/exec"
 	"strings"
-	"github.com/justinbarrick/zeroconf/pkg/cluster"
+	"time"
 )
 
 func random(length int) string {
-  bytes := make([]byte, length)
+	bytes := make([]byte, length)
 
-  for i := 0; i < length; i++ {
-    bytes[i] = byte(97 + rand.Intn(123 - 97))
-  }
+	for i := 0; i < length; i++ {
+		bytes[i] = byte(97 + rand.Intn(123-97))
+	}
 
 	return string(bytes)
 }
@@ -60,7 +60,7 @@ func run(name string, arg ...string) error {
 type Kubeadm struct {
 	Token          string
 	CertificateKey string
-	Masters []string
+	Masters        []string
 	cluster        *cluster.Cluster
 }
 
@@ -208,7 +208,7 @@ func (k *Kubeadm) PickMaster() {
 
 	for {
 		master := members[rand.Intn(len(members))].Name
-		if ! picked[master] {
+		if !picked[master] {
 			k.Masters = append(k.Masters, master)
 			return
 		}
@@ -304,7 +304,7 @@ func (k *Kubeadm) ClusterLeader(numMasterNodes int) error {
 }
 
 func (k *Kubeadm) WaitForClusterState() error {
-	clusterStateBytes := <- k.cluster.LogChannel()
+	clusterStateBytes := <-k.cluster.LogChannel()
 
 	if err := json.Unmarshal(clusterStateBytes, k); err != nil {
 		return err
@@ -322,7 +322,7 @@ func (k *Kubeadm) Controller(numMasterNodes int) {
 				log.Fatal("cluster leader error:", err)
 			}
 		}
-	} ()
+	}()
 
 	go func() {
 		for {
@@ -330,5 +330,5 @@ func (k *Kubeadm) Controller(numMasterNodes int) {
 				log.Fatal("error initializing cluster:", err)
 			}
 		}
-	} ()
+	}()
 }
