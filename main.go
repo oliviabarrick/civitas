@@ -40,47 +40,35 @@ func main() {
 
 	serf := serf.NewSerf(nodeName, int(serfPort))
 	serf.JoinCallback = func(event hserf.MemberEvent) {
-		for _, member := range event.Members {
-			fmt.Println("MEMBER JOINED", member.Name, member.Addr, member.Port)
-
-			if member.Name == nodeName {
-				continue
-			}
-
-			if ! raft.Bootstrapped() {
+		if ! raft.Bootstrapped() {
+			for _, member := range serf.Members() {
 				memberRpcAddr := fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 2)
 				leaderLock.AddNode(lock.NewClient(memberRpcAddr))
-			} else if raft.Leader() {
-				if err := raft.AddNode(member.Name, member.Addr, member.Port + 1); err != nil {
-					log.Fatal("error adding member", err)
+			}
+
+			lockAcquired, err := leaderLock.Lock()
+			if err != nil && err.Error() == "not enough nodes" {
+				return
+			} else if err != nil {
+				log.Fatal(err)
+			}
+
+			if lockAcquired {
+				if err = raft.Bootstrap(); err != nil {
+					log.Fatal("could not bootstrap raft", err)
+				}
+
+				if ! raft.Leader() {
+					return
+				}
+
+				if err := raft.Apply([]byte("hello world")); err != nil {
+					log.Fatal("error writing to raft", err)
 				}
 			}
 		}
 
-		if raft.Bootstrapped() {
-			return
-		}
-
-		lockAcquired, err := leaderLock.Lock()
-		if err != nil && err.Error() == "not enough nodes" {
-			return
-		}
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		if lockAcquired {
-			if err = raft.Bootstrap(); err != nil {
-				log.Fatal("could not bootstrap raft", err)
-			}
-
-			if ! raft.Leader() {
-				return
-			}
-
-			fmt.Println("we are leader")
-
+		if raft.Bootstrapped() && raft.Leader() {
 			for _, member := range serf.Members() {
 				if member.Name == nodeName {
 					continue
@@ -91,10 +79,6 @@ func main() {
 				}
 
 				fmt.Println("ADDED MEMBER", member.Addr, member.Port, member.Name)
-			}
-
-			if err := raft.Apply([]byte("hello world")); err != nil {
-				log.Fatal("error writing to raft", err)
 			}
 		}
 	}
