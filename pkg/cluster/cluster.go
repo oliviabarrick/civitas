@@ -2,28 +2,28 @@ package cluster
 
 import (
 	"fmt"
-	"log"
 	hserf "github.com/hashicorp/serf/serf"
 	"github.com/justinbarrick/zeroconf/pkg/lock"
 	"github.com/justinbarrick/zeroconf/pkg/raft"
 	"github.com/justinbarrick/zeroconf/pkg/serf"
+	"log"
 )
 
 type Cluster struct {
-	port int
-	addr string
-	nodeName string
+	port            int
+	addr            string
+	nodeName        string
 	numInitialNodes int
-	raft *raft.Raft
-	serf *serf.Serf
-	lock *lock.Lock
+	raft            *raft.Raft
+	serf            *serf.Serf
+	lock            *lock.Lock
 }
 
 func NewCluster(nodeName, addr string, port int, numInitialNodes int) *Cluster {
 	return &Cluster{
-		nodeName: nodeName,
-		port: port,
-		addr: addr,
+		nodeName:        nodeName,
+		port:            port,
+		addr:            addr,
 		numInitialNodes: numInitialNodes,
 	}
 }
@@ -57,9 +57,9 @@ func (c *Cluster) Start(bootstrapAddrs []string) error {
 }
 
 func (c *Cluster) JoinCallback(event hserf.MemberEvent) {
-	if ! c.raft.Bootstrapped() {
+	if !c.raft.Bootstrapped() {
 		for _, member := range c.serf.Members() {
-			memberRpcAddr := fmt.Sprintf("%s:%d", member.Addr.String(), member.Port + 2)
+			memberRpcAddr := fmt.Sprintf("%s:%d", member.Addr.String(), member.Port+2)
 			c.lock.AddNode(lock.NewClient(memberRpcAddr))
 		}
 
@@ -75,7 +75,7 @@ func (c *Cluster) JoinCallback(event hserf.MemberEvent) {
 				log.Fatal("could not bootstrap raft", err)
 			}
 
-			if ! c.raft.Leader() {
+			if !c.raft.Leader() {
 				return
 			}
 
@@ -91,7 +91,7 @@ func (c *Cluster) JoinCallback(event hserf.MemberEvent) {
 				continue
 			}
 
-			if err := c.raft.AddNode(member.Name, member.Addr, member.Port + 1); err != nil {
+			if err := c.raft.AddNode(member.Name, member.Addr, member.Port+1); err != nil {
 				log.Fatal("error adding member", err)
 			}
 

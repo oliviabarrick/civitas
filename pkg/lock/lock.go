@@ -2,18 +2,18 @@ package lock
 
 import (
 	"errors"
+	"github.com/minio/dsync"
 	"log"
 	"net"
 	"net/http"
 	"net/rpc"
-	"github.com/minio/dsync"
 )
 
 type Lock struct {
 	initialNodes int
-	lockClients []dsync.NetLocker
-	ds *dsync.Dsync
-	dm *dsync.DRWMutex
+	lockClients  []dsync.NetLocker
+	ds           *dsync.Dsync
+	dm           *dsync.DRWMutex
 }
 
 func NewLock(rpcAddr string, initialNodes int) *Lock {
@@ -30,7 +30,7 @@ func NewLock(rpcAddr string, initialNodes int) *Lock {
 
 		log.Println("LockServer listening at ", rpcAddr)
 		http.Serve(listener, nil)
-	} ()
+	}()
 
 	return &Lock{
 		initialNodes: initialNodes,

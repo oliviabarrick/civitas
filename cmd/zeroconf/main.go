@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/justinbarrick/zeroconf/pkg/cluster"
+	"github.com/justinbarrick/zeroconf/pkg/kubeadm"
 	"log"
 	"os"
 	"time"
-	"github.com/justinbarrick/zeroconf/pkg/cluster"
-	"github.com/justinbarrick/zeroconf/pkg/kubeadm"
 )
 
 func main() {
@@ -29,8 +29,8 @@ func main() {
 	}
 
 	k := kubeadm.Kubeadm{
-		APIServer: "k8s.example.com",
-		Token: "abcdef.abcdef12abcdef12",
+		APIServer:      "k8s.example.com",
+		Token:          "abcdef.abcdef12abcdef12",
 		CertificateKey: "abcd",
 	}
 

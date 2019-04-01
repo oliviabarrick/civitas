@@ -2,14 +2,14 @@ package raft
 
 import (
 	"errors"
-	"github.com/hashicorp/go-msgpack/codec"
-	"sync"
-	"io"
 	"fmt"
+	"github.com/hashicorp/go-msgpack/codec"
+	"github.com/hashicorp/raft"
+	"io"
 	"net"
 	"os"
+	"sync"
 	"time"
-	"github.com/hashicorp/raft"
 )
 
 type MockFSM struct {
@@ -62,14 +62,14 @@ func (m *MockSnapshot) Release() {
 }
 
 type Raft struct {
-	Name string
+	Name       string
 	ListenAddr string
-	raft *raft.Raft
+	raft       *raft.Raft
 }
 
 func NewRaft(name, listenAddr string, port int) (*Raft, error) {
 	raft := &Raft{
-		Name: name,
+		Name:       name,
 		ListenAddr: fmt.Sprintf("%s:%d", listenAddr, port),
 	}
 
@@ -82,7 +82,7 @@ func (r *Raft) Start() error {
 		return err
 	}
 
-	t, err := raft.NewTCPTransport(r.ListenAddr, addr, 5, 5 * time.Second, os.Stderr)
+	t, err := raft.NewTCPTransport(r.ListenAddr, addr, 5, 5*time.Second, os.Stderr)
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func (r *Raft) Bootstrap() error {
 	}
 
 	acquiredLeader := <-r.raft.LeaderCh()
-	if ! acquiredLeader {
+	if !acquiredLeader {
 		return errors.New("error acquiring leader while bootstrapping")
 	}
 
@@ -128,13 +128,13 @@ func (r *Raft) Bootstrap() error {
 
 func (r *Raft) AddNode(name string, addr net.IP, port uint16) error {
 	memberAddr := raft.ServerAddress(fmt.Sprintf("%s:%d", addr, port))
-	err := r.raft.AddVoter(raft.ServerID(name), memberAddr, 0, 5 * time.Second).Error()
+	err := r.raft.AddVoter(raft.ServerID(name), memberAddr, 0, 5*time.Second).Error()
 	fmt.Printf("ADDED MEMBER %s (%s:%d)\n", name, addr, port)
 	return err
 }
 
 func (r *Raft) Apply(data []byte) error {
-	return r.raft.Apply(data, 5 * time.Second).Error()
+	return r.raft.Apply(data, 5*time.Second).Error()
 }
 
 func (r *Raft) Leader() bool {

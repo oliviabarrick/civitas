@@ -1,18 +1,18 @@
 package serf
 
 import (
+	"github.com/hashicorp/serf/serf"
 	"log"
 	"os"
 	"time"
-	"github.com/hashicorp/serf/serf"
 )
 
 type Serf struct {
-	Name string
-	Port int
+	Name         string
+	Port         int
 	JoinCallback func(serf.MemberEvent)
-	events chan serf.Event
-	serf *serf.Serf
+	events       chan serf.Event
+	serf         *serf.Serf
 }
 
 func NewSerf(name string, port int) *Serf {

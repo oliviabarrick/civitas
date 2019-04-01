@@ -1,22 +1,22 @@
 package lock
 
 import (
-	"net/rpc"
 	"fmt"
+	"net/rpc"
 	"sync"
 
 	"github.com/minio/dsync"
 )
 
 type ReconnectRPCClient struct {
-	mutex    sync.Mutex
-	rpc      *rpc.Client
-	addr     string
+	mutex sync.Mutex
+	rpc   *rpc.Client
+	addr  string
 }
 
 func NewClient(addr string) dsync.NetLocker {
 	return &ReconnectRPCClient{
-		addr:     addr,
+		addr: addr,
 	}
 }
 

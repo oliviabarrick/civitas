@@ -1,18 +1,18 @@
 package kubeadm
 
 import (
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	kubeadm "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1"
 	"os"
 	"os/exec"
 	"strings"
-	kubeadm "k8s.io/kubernetes/cmd/kubeadm/app/apis/kubeadm/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/serializer/json"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func writeConfig(objs... runtime.Object) (string, error) {
+func writeConfig(objs ...runtime.Object) (string, error) {
 	tmpfile, err := ioutil.TempFile("", "kubeadm*.yaml")
 	if err != nil {
 		return "", err
@@ -42,15 +42,15 @@ func run(name string, arg ...string) error {
 }
 
 type Kubeadm struct {
-	APIServer string
-	Token string
+	APIServer      string
+	Token          string
 	CertificateKey string
 }
 
 func (k *Kubeadm) ClusterConfiguration() *kubeadm.ClusterConfiguration {
 	return &kubeadm.ClusterConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "ClusterConfiguration",
+			Kind:       "ClusterConfiguration",
 			APIVersion: "kubeadm.k8s.io/v1beta1",
 		},
 		KubernetesVersion: "v1.14.0",
@@ -64,13 +64,13 @@ func (k *Kubeadm) ClusterConfiguration() *kubeadm.ClusterConfiguration {
 func (k *Kubeadm) JoinConfiguration(master bool) *kubeadm.JoinConfiguration {
 	joinConfig := kubeadm.JoinConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "JoinConfiguration",
+			Kind:       "JoinConfiguration",
 			APIVersion: "kubeadm.k8s.io/v1beta1",
 		},
 		Discovery: kubeadm.Discovery{
 			BootstrapToken: &kubeadm.BootstrapTokenDiscovery{
-				APIServerEndpoint: fmt.Sprintf("%s:6443", k.APIServer),
-				Token: k.Token,
+				APIServerEndpoint:        fmt.Sprintf("%s:6443", k.APIServer),
+				Token:                    k.Token,
 				UnsafeSkipCAVerification: true,
 			},
 		},
@@ -92,7 +92,7 @@ func (k *Kubeadm) InitConfiguration() *kubeadm.InitConfiguration {
 
 	return &kubeadm.InitConfiguration{
 		TypeMeta: metav1.TypeMeta{
-			Kind: "InitConfiguration",
+			Kind:       "InitConfiguration",
 			APIVersion: "kubeadm.k8s.io/v1beta1",
 		},
 		BootstrapTokens: []kubeadm.BootstrapToken{
@@ -105,7 +105,7 @@ func (k *Kubeadm) InitConfiguration() *kubeadm.InitConfiguration {
 					"authentication",
 				},
 				Token: &kubeadm.BootstrapTokenString{
-					ID: token[0],
+					ID:     token[0],
 					Secret: token[1],
 				},
 				TTL: &metav1.Duration{},
@@ -137,22 +137,22 @@ func (k *Kubeadm) Kubeadm(args []string, configObjs ...runtime.Object) error {
 
 func (k *Kubeadm) InitCluster() error {
 	return k.Kubeadm([]string{
-			"init", "--experimental-upload-certs",
-			"--certificate-key", k.CertificateKey,
-		}, k.InitConfiguration(), k.ClusterConfiguration(),
+		"init", "--experimental-upload-certs",
+		"--certificate-key", k.CertificateKey,
+	}, k.InitConfiguration(), k.ClusterConfiguration(),
 	)
 }
 
 func (k *Kubeadm) InitMaster() error {
 	return k.Kubeadm([]string{
-			"join", "--certificate-key", k.CertificateKey,
-		}, k.JoinConfiguration(true), k.ClusterConfiguration(),
+		"join", "--certificate-key", k.CertificateKey,
+	}, k.JoinConfiguration(true), k.ClusterConfiguration(),
 	)
 }
 
 func (k *Kubeadm) InitWorker() error {
 	return k.Kubeadm([]string{
-			"join",
-		}, k.JoinConfiguration(false), k.ClusterConfiguration(),
+		"join",
+	}, k.JoinConfiguration(false), k.ClusterConfiguration(),
 	)
 }
