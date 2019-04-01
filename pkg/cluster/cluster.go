@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 	hserf "github.com/hashicorp/serf/serf"
-	"github.com/justinbarrick/zeroconf-k8s/pkg/lock"
-	"github.com/justinbarrick/zeroconf-k8s/pkg/raft"
-	"github.com/justinbarrick/zeroconf-k8s/pkg/serf"
+	"github.com/justinbarrick/zeroconf/pkg/lock"
+	"github.com/justinbarrick/zeroconf/pkg/raft"
+	"github.com/justinbarrick/zeroconf/pkg/serf"
 )
 
 type Cluster struct {

@@ -1,4 +1,4 @@
-module github.com/justinbarrick/zeroconf-k8s
+module github.com/justinbarrick/zeroconf
 
 go 1.12
 

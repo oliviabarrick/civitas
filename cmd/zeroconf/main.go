@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 	"time"
-	"github.com/justinbarrick/zeroconf-k8s/pkg/cluster"
-	"github.com/justinbarrick/zeroconf-k8s/pkg/kubeadm"
+	"github.com/justinbarrick/zeroconf/pkg/cluster"
+	"github.com/justinbarrick/zeroconf/pkg/kubeadm"
 )
 
 func main() {
