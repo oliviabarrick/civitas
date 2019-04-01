@@ -97,7 +97,15 @@ func (r *Raft) Start() error {
 	return err
 }
 
+func (r *Raft) Bootstrapped() bool {
+	return r.raft.LastIndex() > 0
+}
+
 func (r *Raft) Bootstrap() error {
+	if r.Bootstrapped() {
+		return nil
+	}
+
 	err := r.raft.BootstrapCluster(raft.Configuration{
 		Servers: []raft.Server{
 			{
@@ -127,4 +135,8 @@ func (r *Raft) AddNode(name string, addr net.IP, port uint16) error {
 
 func (r *Raft) Apply(data []byte) error {
 	return r.raft.Apply(data, 5 * time.Second).Error()
+}
+
+func (r *Raft) Leader() bool {
+	return r.raft.State() == raft.Leader
 }

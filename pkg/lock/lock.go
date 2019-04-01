@@ -1,6 +1,7 @@
 package lock
 
 import (
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -48,7 +49,7 @@ func (l *Lock) AddNode(node dsync.NetLocker) {
 
 func (l *Lock) Lock() (bool, error) {
 	if len(l.lockClients) < l.initialNodes {
-		return false, nil
+		return false, errors.New("not enough nodes")
 	}
 
 	var err error
