@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"encoding/json"
 	"fmt"
 	hserf "github.com/hashicorp/serf/serf"
 	"github.com/justinbarrick/zeroconf/pkg/lock"
@@ -74,14 +75,6 @@ func (c *Cluster) JoinCallback(event hserf.MemberEvent) {
 			if err = c.raft.Bootstrap(); err != nil {
 				log.Fatal("could not bootstrap raft", err)
 			}
-
-			if !c.raft.Leader() {
-				return
-			}
-
-			if err := c.raft.Apply([]byte("hello world")); err != nil {
-				log.Fatal("error writing to raft", err)
-			}
 		}
 	}
 
@@ -94,8 +87,30 @@ func (c *Cluster) JoinCallback(event hserf.MemberEvent) {
 			if err := c.raft.AddNode(member.Name, member.Addr, member.Port+1); err != nil {
 				log.Fatal("error adding member", err)
 			}
-
-			fmt.Println("ADDED MEMBER", member.Addr, member.Port, member.Name)
 		}
 	}
+}
+
+func (c *Cluster) Send(obj interface{}) error {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return err
+	}
+	return c.raft.Apply(data)
+}
+
+func (c *Cluster) LogChannel() (chan []byte) {
+	return c.raft.LogChannel()
+}
+
+func (c *Cluster) NotifyChannel() (chan bool) {
+	return c.raft.NotifyChannel()
+}
+
+func (c *Cluster) Members() []hserf.Member {
+	return c.serf.Members()
+}
+
+func (c *Cluster) NodeName() string {
+	return c.nodeName
 }

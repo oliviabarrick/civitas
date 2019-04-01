@@ -1,8 +1,10 @@
 package raft
 
 import (
+	"io/ioutil"
 	"errors"
 	"fmt"
+	"log"
 	"github.com/hashicorp/go-msgpack/codec"
 	"github.com/hashicorp/raft"
 	"io"
@@ -12,31 +14,38 @@ import (
 	"time"
 )
 
-type MockFSM struct {
+type FSM struct {
 	sync.Mutex
+	logCh chan []byte
 	logs [][]byte
 }
 
-type MockSnapshot struct {
+type Snapshot struct {
 	logs     [][]byte
 	maxIndex int
 }
 
-func (m *MockFSM) Apply(log *raft.Log) interface{} {
+func NewFSM() *FSM {
+	return &FSM{
+		logCh: make(chan []byte),
+	}
+}
+
+func (m *FSM) Apply(log *raft.Log) interface{} {
 	m.Lock()
 	defer m.Unlock()
-	fmt.Println("applying", log.Data)
 	m.logs = append(m.logs, log.Data)
+	m.logCh <- log.Data
 	return len(m.logs)
 }
 
-func (m *MockFSM) Snapshot() (raft.FSMSnapshot, error) {
+func (m *FSM) Snapshot() (raft.FSMSnapshot, error) {
 	m.Lock()
 	defer m.Unlock()
-	return &MockSnapshot{m.logs, len(m.logs)}, nil
+	return &Snapshot{m.logs, len(m.logs)}, nil
 }
 
-func (m *MockFSM) Restore(inp io.ReadCloser) error {
+func (m *FSM) Restore(inp io.ReadCloser) error {
 	m.Lock()
 	defer m.Unlock()
 	defer inp.Close()
@@ -47,7 +56,7 @@ func (m *MockFSM) Restore(inp io.ReadCloser) error {
 	return dec.Decode(&m.logs)
 }
 
-func (m *MockSnapshot) Persist(sink raft.SnapshotSink) error {
+func (m *Snapshot) Persist(sink raft.SnapshotSink) error {
 	hd := codec.MsgpackHandle{}
 	enc := codec.NewEncoder(sink, &hd)
 	if err := enc.Encode(m.logs[:m.maxIndex]); err != nil {
@@ -58,13 +67,15 @@ func (m *MockSnapshot) Persist(sink raft.SnapshotSink) error {
 	return nil
 }
 
-func (m *MockSnapshot) Release() {
-}
+func (m *Snapshot) Release() {}
 
 type Raft struct {
 	Name       string
 	ListenAddr string
 	raft       *raft.Raft
+	fsm *FSM
+	notifyCh   chan bool
+	added map[string]bool
 }
 
 func NewRaft(name, listenAddr string, port int) (*Raft, error) {
@@ -82,7 +93,14 @@ func (r *Raft) Start() error {
 		return err
 	}
 
-	t, err := raft.NewTCPTransport(r.ListenAddr, addr, 5, 5*time.Second, os.Stderr)
+	var logOutput io.Writer
+	if os.Getenv("DEBUG") != "1" {
+		logOutput = ioutil.Discard
+	} else {
+		logOutput = os.Stderr
+	}
+
+	t, err := raft.NewTCPTransport(r.ListenAddr, addr, 5, 5*time.Second, logOutput)
 	if err != nil {
 		return err
 	}
@@ -92,9 +110,26 @@ func (r *Raft) Start() error {
 
 	raftConfig := raft.DefaultConfig()
 	raftConfig.LocalID = raft.ServerID(r.Name)
+	raftConfig.LogOutput = logOutput
 
-	r.raft, err = raft.NewRaft(raftConfig, &MockFSM{}, store, store, snapshotStore, t)
+	r.notifyCh = make(chan bool)
+	raftConfig.NotifyCh = r.notifyCh
+
+	r.fsm = NewFSM()
+	r.raft, err = raft.NewRaft(raftConfig, r.fsm, store, store, snapshotStore, t)
+
+	r.added = map[string]bool{}
+
+	log.Println("raft listening at:", r.ListenAddr)
 	return err
+}
+
+func (r *Raft) LogChannel() (chan []byte) {
+	return r.fsm.logCh
+}
+
+func (r *Raft) NotifyChannel() (chan bool) {
+	return r.notifyCh
 }
 
 func (r *Raft) Bootstrapped() bool {
@@ -129,7 +164,10 @@ func (r *Raft) Bootstrap() error {
 func (r *Raft) AddNode(name string, addr net.IP, port uint16) error {
 	memberAddr := raft.ServerAddress(fmt.Sprintf("%s:%d", addr, port))
 	err := r.raft.AddVoter(raft.ServerID(name), memberAddr, 0, 5*time.Second).Error()
-	fmt.Printf("ADDED MEMBER %s (%s:%d)\n", name, addr, port)
+	if r.added[name] == false {
+		log.Printf("added member to raft %s (%s:%d)\n", name, addr, port)
+	}
+	r.added[name] = true
 	return err
 }
 

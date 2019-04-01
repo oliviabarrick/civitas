@@ -28,7 +28,7 @@ func NewLock(rpcAddr string, initialNodes int) *Lock {
 			log.Fatal(err)
 		}
 
-		log.Println("LockServer listening at ", rpcAddr)
+		log.Println("dsync listening at:", rpcAddr)
 		http.Serve(listener, nil)
 	}()
 

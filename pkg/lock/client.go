@@ -1,7 +1,6 @@
 package lock
 
 import (
-	"fmt"
 	"net/rpc"
 	"sync"
 
@@ -65,7 +64,6 @@ func (rpcClient *ReconnectRPCClient) RLock(args dsync.LockArgs) (status bool, er
 }
 
 func (rpcClient *ReconnectRPCClient) Lock(args dsync.LockArgs) (status bool, err error) {
-	fmt.Println("lock (client)!")
 	err = rpcClient.Call("Dsync.Lock", &args, &status)
 	return status, err
 }

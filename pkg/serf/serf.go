@@ -2,6 +2,7 @@ package serf
 
 import (
 	"github.com/hashicorp/serf/serf"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -31,7 +32,14 @@ func (s *Serf) Start() (err error) {
 	serfConfig.NodeName = s.Name
 	serfConfig.EventCh = s.events
 
+	if os.Getenv("DEBUG") != "1" {
+		serfConfig.LogOutput = ioutil.Discard
+		serfConfig.MemberlistConfig.LogOutput = ioutil.Discard
+	}
+
 	s.serf, err = serf.Create(serfConfig)
+
+	log.Println("serf listening at:", s.Port)
 
 	go func() {
 		for event := range s.events {

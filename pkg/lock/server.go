@@ -2,7 +2,6 @@ package lock
 
 import (
 	"errors"
-	"fmt"
 	"github.com/minio/dsync"
 	"sync"
 )
@@ -16,7 +15,6 @@ func (ls *LockServer) Lock(args *dsync.LockArgs, reply *bool) error {
 	ls.mutex.Lock()
 	defer ls.mutex.Unlock()
 
-	fmt.Println("lock (server)!")
 	if !ls.locked {
 		ls.locked = true
 		*reply = true
