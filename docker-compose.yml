@@ -1,0 +1,15 @@
+version: '2.4'
+
+services:
+  node:
+    build: .
+    privileged: true
+    scale: 6
+    entrypoint:
+    - /sbin/init
+    tmpfs:
+    - /run
+    - /run/lock
+    volumes:
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - ./zeroconf:/usr/bin/zeroconf:ro

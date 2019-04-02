@@ -1,6 +1,7 @@
 package kubeadm
 
 import (
+	"github.com/justinbarrick/zeroconf/pkg/ipvs"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -50,7 +51,6 @@ func writeConfig(objs ...runtime.Object) (string, error) {
 
 func run(name string, arg ...string) error {
 	log.Println("running command:", name, arg)
-	return nil
 	cmd := exec.Command(name, arg...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -78,9 +78,9 @@ func (k *Kubeadm) ClusterConfiguration() *kubeadm.ClusterConfiguration {
 		},
 		KubernetesVersion: "v1.14.0",
 		APIServer: kubeadm.APIServer{
-			CertSANs: []string{"k8s-api"},
+			CertSANs: []string{"169.254.13.37", "k8s-api"},
 		},
-		ControlPlaneEndpoint: "k8s-api:6443",
+		ControlPlaneEndpoint: "169.254.13.37:6443",
 	}
 }
 
@@ -92,7 +92,7 @@ func (k *Kubeadm) JoinConfiguration(master bool) *kubeadm.JoinConfiguration {
 		},
 		Discovery: kubeadm.Discovery{
 			BootstrapToken: &kubeadm.BootstrapTokenDiscovery{
-				APIServerEndpoint:        "k8s-api:6443",
+				APIServerEndpoint:        "169.254.13.37:6443",
 				Token:                    k.Token,
 				UnsafeSkipCAVerification: true,
 			},
@@ -138,7 +138,7 @@ func (k *Kubeadm) InitConfiguration() *kubeadm.InitConfiguration {
 }
 
 func (k *Kubeadm) Reset() error {
-	return run("kubeadm", "reset")
+	return run("kubeadm", "reset", "--force")
 }
 
 func (k *Kubeadm) Kubeadm(args []string, configObjs ...runtime.Object) error {
@@ -154,6 +154,14 @@ func (k *Kubeadm) Kubeadm(args []string, configObjs ...runtime.Object) error {
 	// defer os.Remove(configPath)
 
 	args = append(args, "--config", configPath)
+
+	// TODO: make configurable
+	for _, preflight := range []string{
+		"FileContent--proc-sys-net-bridge-bridge-nf-call-iptables",
+		"Swap", "SystemVerification",
+	} {
+		args = append(args, "--ignore-preflight-errors", preflight)
+	}
 
 	return run("kubeadm", args...)
 }
@@ -225,6 +233,36 @@ func (k *Kubeadm) SetCertificateKey(certificateKey string) {
 
 func (k *Kubeadm) SetMasters(masters []string) {
 	k.Masters = masters
+}
+
+func (k *Kubeadm) UpdateIPVS() error {
+	ipvs, err := ipvs.NewIPVS()
+	if err != nil {
+		return err
+	}
+
+	masterIPs := []string{}
+	members := k.cluster.Members()
+	for _, master := range k.Masters {
+		for _, member := range members {
+			if member.Name != master {
+				continue
+			}
+
+			masterIPs = append(masterIPs, member.Addr.String())
+		}
+	}
+
+	for i := 0; i < 10; i++ {
+		err = ipvs.Set("k8s-api", "169.254.13.37", 6443, masterIPs, 6443)
+		if err == nil {
+			return nil
+		}
+		fmt.Println("Got error setting IPVS service:", err)
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	return err
 }
 
 func (k *Kubeadm) SetCluster(cluster *cluster.Cluster) {
@@ -311,6 +349,10 @@ func (k *Kubeadm) WaitForClusterState() error {
 	}
 
 	log.Println("got cluster state:", k)
+
+	if err := k.UpdateIPVS(); err != nil {
+		return err
+	}
 
 	return k.StartNode()
 }

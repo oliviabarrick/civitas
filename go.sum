@@ -36,6 +36,8 @@ github.com/hashicorp/raft v1.0.0 h1:htBVktAOtGs4Le5Z7K8SF5H2+oWsQFYVmOgH5loro7Y=
 github.com/hashicorp/raft v1.0.0/go.mod h1:DVSAWItjLjTOkVbSpWQ0j0kUADIvDaCtBxIcbNAQLkI=
 github.com/hashicorp/serf v0.8.2 h1:YZ7UKsJv+hKjqGVUUbtE3HNj79Eln2oQ75tniF6iPt0=
 github.com/hashicorp/serf v0.8.2/go.mod h1:6hOLApaqBFA1NXqRQAsxw9QxuDEvNxSQRwA/JwenrHc=
+github.com/hkwi/nlgo v0.0.0-20170629055117-dbae43f4fc47 h1:kU+Nzavrq68kI5tezibMtT+xAvbcpT9e2ZHvK29B4qg=
+github.com/hkwi/nlgo v0.0.0-20170629055117-dbae43f4fc47/go.mod h1:z3bABi4Q8MMLVkhLL04UCskrf2E443dPg9r6emBerDE=
 github.com/json-iterator/go v1.1.6 h1:MrUvLMLTMxbqFJ9kzlvat/rYZqZnW3u4wkLzWTaFwKs=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/justinbarrick/dsync v0.0.0-20190331203947-a9d0969e8479 h1:ki2YjS3hNrwzr8Y56ODM3w2sbKfMViOCkOMuAhxIPME=
@@ -56,6 +58,8 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.1 h1:9f412s+6RmYXLWZSEzVVgPGK7C2PphHj5RJrvfx9AWI=
 github.com/modern-go/reflect2 v1.0.1/go.mod h1:bx2lNnkwVCuqBIxFjflWJWanXIb3RllmbCylyMrvgv0=
+github.com/mqliang/libipvs v0.0.0-20181031074626-20f197c976a3 h1:Cm3Te7sX6c6YuOwyFRDCCMHNXoi3+kLPuktiR+VImzw=
+github.com/mqliang/libipvs v0.0.0-20181031074626-20f197c976a3/go.mod h1:lfiN9zq64J2aD2LoXQ9ha35B1PTJ1pH8NXb3GXUMFWA=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=

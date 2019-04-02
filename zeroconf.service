@@ -1,0 +1,10 @@
+[Unit]
+Description=Zeroconf Kubernetes Membership
+After=network.target
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/zeroconf -interface eth0 192.168.48.2:1234
+
+[Install]
+WantedBy=multi-user.target

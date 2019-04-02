@@ -10,10 +10,12 @@ require (
 	github.com/hashicorp/go-msgpack v0.5.3
 	github.com/hashicorp/raft v1.0.0
 	github.com/hashicorp/serf v0.8.2
+	github.com/hkwi/nlgo v0.0.0-20170629055117-dbae43f4fc47 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/minio/dsync v0.0.0-20190131060523-fb604afd87b2
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/mqliang/libipvs v0.0.0-20181031074626-20f197c976a3
 	github.com/pkg/errors v0.8.1 // indirect
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
