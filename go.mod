@@ -4,9 +4,12 @@ go 1.12
 
 replace github.com/minio/dsync => github.com/justinbarrick/dsync v0.0.0-20190331203947-a9d0969e8479
 
+replace github.com/google/tcpproxy => github.com/yangchenyun/tcpproxy v0.0.0-20180611030643-2041ee5cacf9
+
 require (
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
+	github.com/google/tcpproxy v0.0.0-00010101000000-000000000000
 	github.com/hashicorp/go-msgpack v0.5.3
 	github.com/hashicorp/raft v1.0.0
 	github.com/hashicorp/serf v0.8.2

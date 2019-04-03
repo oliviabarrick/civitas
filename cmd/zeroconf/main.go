@@ -21,6 +21,7 @@ func main() {
 	var iface = flag.String("interface", "", "the interface to advertise and bind to")
 	var port = flag.Int("port", 1234, "the port to bind to for p2p activity")
 	var nodeName = flag.String("name", hostName, "the identifier to use for this node")
+	var controlPlaneIP = flag.String("control-plane-ip", "127.0.13.37", "IP address to bind the control plane load balancer to on each node.")
 	flag.Parse()
 
 	if *iface != "" {
@@ -43,7 +44,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	k := kubeadm.NewKubeadm(cluster)
+	k := kubeadm.NewKubeadm(cluster, *controlPlaneIP)
 	k.Controller(*numMasterNodes)
 
 	select{ }

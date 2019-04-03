@@ -1,7 +1,7 @@
 package kubeadm
 
 import (
-	"github.com/justinbarrick/zeroconf/pkg/ipvs"
+	"github.com/justinbarrick/zeroconf/pkg/proxy"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -62,11 +62,15 @@ type Kubeadm struct {
 	CertificateKey string
 	Masters        []string
 	cluster        *cluster.Cluster
+	proxy          *proxy.Proxy
+	controlPlaneIP string
 }
 
-func NewKubeadm(cluster *cluster.Cluster) *Kubeadm {
+func NewKubeadm(cluster *cluster.Cluster, controlPlaneIP string) *Kubeadm {
 	return &Kubeadm{
 		cluster: cluster,
+		proxy: proxy.NewProxy(fmt.Sprintf("%s:6444", controlPlaneIP)),
+		controlPlaneIP: controlPlaneIP,
 	}
 }
 
@@ -78,9 +82,9 @@ func (k *Kubeadm) ClusterConfiguration() *kubeadm.ClusterConfiguration {
 		},
 		KubernetesVersion: "v1.14.0",
 		APIServer: kubeadm.APIServer{
-			CertSANs: []string{"169.254.13.37", "k8s-api"},
+			CertSANs: []string{k.controlPlaneIP,},
 		},
-		ControlPlaneEndpoint: "169.254.13.37:6443",
+		ControlPlaneEndpoint: fmt.Sprintf("%s:6444", k.controlPlaneIP),
 	}
 }
 
@@ -92,7 +96,7 @@ func (k *Kubeadm) JoinConfiguration(master bool) *kubeadm.JoinConfiguration {
 		},
 		Discovery: kubeadm.Discovery{
 			BootstrapToken: &kubeadm.BootstrapTokenDiscovery{
-				APIServerEndpoint:        "169.254.13.37:6443",
+				APIServerEndpoint:        fmt.Sprintf("%s:6444", k.controlPlaneIP),
 				Token:                    k.Token,
 				UnsafeSkipCAVerification: true,
 			},
@@ -133,6 +137,9 @@ func (k *Kubeadm) InitConfiguration() *kubeadm.InitConfiguration {
 				},
 				TTL: &metav1.Duration{},
 			},
+		},
+		LocalAPIEndpoint: kubeadm.APIEndpoint{
+			BindPort: 6443,
 		},
 	}
 }
@@ -231,40 +238,6 @@ func (k *Kubeadm) SetCertificateKey(certificateKey string) {
 	k.CertificateKey = certificateKey
 }
 
-func (k *Kubeadm) SetMasters(masters []string) {
-	k.Masters = masters
-}
-
-func (k *Kubeadm) UpdateIPVS() error {
-	ipvs, err := ipvs.NewIPVS()
-	if err != nil {
-		return err
-	}
-
-	masterIPs := []string{}
-	members := k.cluster.Members()
-	for _, master := range k.Masters {
-		for _, member := range members {
-			if member.Name != master {
-				continue
-			}
-
-			masterIPs = append(masterIPs, member.Addr.String())
-		}
-	}
-
-	for i := 0; i < 10; i++ {
-		err = ipvs.Set("k8s-api", "169.254.13.37", 6443, masterIPs, 6443)
-		if err == nil {
-			return nil
-		}
-		fmt.Println("Got error setting IPVS service:", err)
-		time.Sleep(500 * time.Millisecond)
-	}
-
-	return err
-}
-
 func (k *Kubeadm) SetCluster(cluster *cluster.Cluster) {
 	k.cluster = cluster
 }
@@ -349,15 +322,16 @@ func (k *Kubeadm) WaitForClusterState() error {
 	}
 
 	log.Println("got cluster state:", k)
-
-	if err := k.UpdateIPVS(); err != nil {
-		return err
-	}
+	k.UpdateAPIProxy()
 
 	return k.StartNode()
 }
 
 func (k *Kubeadm) Controller(numMasterNodes int) {
+	if err := k.proxy.Run(); err != nil {
+		log.Fatal("error starting api server proxy:", err)
+	}
+
 	go func() {
 		for {
 			if err := k.ClusterLeader(numMasterNodes); err != nil {
@@ -373,4 +347,20 @@ func (k *Kubeadm) Controller(numMasterNodes int) {
 			}
 		}
 	}()
+}
+
+func (k *Kubeadm) UpdateAPIProxy() {
+	masterIPs := []string{}
+	members := k.cluster.Members()
+	for _, master := range k.Masters {
+		for _, member := range members {
+			if member.Name != master {
+				continue
+			}
+
+			masterIPs = append(masterIPs, fmt.Sprintf("%s:6443", member.Addr.String()))
+		}
+	}
+
+	k.proxy.Set(masterIPs)
 }
