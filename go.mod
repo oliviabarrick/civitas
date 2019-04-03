@@ -1,4 +1,4 @@
-module github.com/justinbarrick/zeroconf
+module github.com/justinbarrick/civitas
 
 go 1.12
 

@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	hserf "github.com/hashicorp/serf/serf"
-	"github.com/justinbarrick/zeroconf/pkg/lock"
-	"github.com/justinbarrick/zeroconf/pkg/raft"
-	"github.com/justinbarrick/zeroconf/pkg/serf"
+	"github.com/justinbarrick/civitas/pkg/lock"
+	"github.com/justinbarrick/civitas/pkg/raft"
+	"github.com/justinbarrick/civitas/pkg/serf"
 	"log"
 )
 

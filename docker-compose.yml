@@ -12,4 +12,4 @@ services:
     - /run/lock
     volumes:
     - /sys/fs/cgroup:/sys/fs/cgroup:ro
-    - ./zeroconf:/usr/bin/zeroconf:ro
+    - ./civitas:/usr/bin/civitas:ro

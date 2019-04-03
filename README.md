@@ -1,10 +1,10 @@
-zeroconf is an experiment at bootstrapping Kubernetes clusters where the nodes have
+civitas is an experiment at bootstrapping Kubernetes clusters where the nodes have
 no prior knowledge of each other before being started, but will find each other and
 come to agreement on a Kubernetes bootstrap token and the roles of each node.
 
 # Requirements
 
-In order for a Kubernetes cluster to be considered "zeroconf", it must meet the
+In order for a Kubernetes cluster to be considered "civitas", it must meet the
 following requirements:
 
 * There are no permanent master IP addresses or hostnames.
@@ -137,7 +137,7 @@ electing a new Kubernetes master and replicating that information to the other n
 
 In order to use Raft, a leader has to be predetermined. One node bootstraps the Raft
 cluster and connects to all of the others - after this, leader election proceeds as
-normal. This presents an issue for zeroconf, since the nodes have no prior knowledge
+normal. This presents an issue for civitas, since the nodes have no prior knowledge
 of each other so a leader has to be elected.
 
 To work around this, we use dsync as a distributed lock. Dsync is a gossip-based

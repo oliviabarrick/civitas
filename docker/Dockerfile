@@ -7,5 +7,5 @@ RUN apt-get update && apt-get install -y apt-transport-https curl gnupg2 softwar
     add-apt-repository "deb [arch=amd64] https://apt.kubernetes.io/ kubernetes-xenial main"
 RUN apt-get update && apt-get install -y kubelet kubeadm kubectl docker-ce docker-ce-cli containerd.io iptables
 COPY 10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-COPY zeroconf.service /etc/systemd/system/zeroconf.service
-RUN systemctl enable kubelet docker zeroconf
+COPY civitas.service /etc/systemd/system/civitas.service
+RUN systemctl enable kubelet docker civitas

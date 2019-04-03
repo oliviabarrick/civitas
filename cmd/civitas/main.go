@@ -2,9 +2,9 @@ package main
 
 import (
 	"flag"
-	"github.com/justinbarrick/zeroconf/pkg/cluster"
-	"github.com/justinbarrick/zeroconf/pkg/kubeadm"
-	"github.com/justinbarrick/zeroconf/pkg/util"
+	"github.com/justinbarrick/civitas/pkg/cluster"
+	"github.com/justinbarrick/civitas/pkg/kubeadm"
+	"github.com/justinbarrick/civitas/pkg/util"
 	"log"
 	"os"
 )

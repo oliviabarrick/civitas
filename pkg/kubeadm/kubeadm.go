@@ -1,11 +1,11 @@
 package kubeadm
 
 import (
-	"github.com/justinbarrick/zeroconf/pkg/proxy"
+	"github.com/justinbarrick/civitas/pkg/proxy"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/justinbarrick/zeroconf/pkg/cluster"
+	"github.com/justinbarrick/civitas/pkg/cluster"
 	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
