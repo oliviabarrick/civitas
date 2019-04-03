@@ -2,6 +2,8 @@ civitas is an experiment at bootstrapping Kubernetes clusters where the nodes ha
 no prior knowledge of each other before being started, but will find each other and
 come to agreement on a Kubernetes bootstrap token and the roles of each node.
 
+The design is heavily inspired by [Chick-Fil-A's Highlander](https://medium.com/@cfatechblog/bare-metal-k8s-clustering-at-chick-fil-a-scale-7b0607bd3541).
+
 # Requirements
 
 In order for a Kubernetes cluster to be considered "zero configuration", it must meet
