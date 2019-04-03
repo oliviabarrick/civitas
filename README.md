@@ -4,8 +4,8 @@ come to agreement on a Kubernetes bootstrap token and the roles of each node.
 
 # Requirements
 
-In order for a Kubernetes cluster to be considered "civitas", it must meet the
-following requirements:
+In order for a Kubernetes cluster to be considered "zero configuration", it must meet
+the following requirements:
 
 * There are no permanent master IP addresses or hostnames.
 * If a Kubernetes master goes away, a new one should be elected in its place.
