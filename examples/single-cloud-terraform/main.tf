@@ -39,7 +39,7 @@ coreos:
 
         [Service]
         Restart=always
-        ExecStart=/usr/bin/docker run --net=host --tmpfs /run --tmpfs /run/lock -v /sys/fs/cgroup:/sys/fs/cgroup:ro -e DISCOVERY_CONFIG="provider=digitalocean region=sfo2 tag_name=civitas api_token=${var.digitalocean_token}" -e ADVERTISE_INTERFACE=eth1 justinbarrick/civitas:dev
+        ExecStart=/usr/bin/docker run --name civitas --privileged --net=host --tmpfs /run --tmpfs /run/lock -v /sys/fs/cgroup:/sys/fs/cgroup:ro -e DISCOVERY_CONFIG="provider=digitalocean region=sfo2 tag_name=civitas api_token=${var.digitalocean_token}" -e ADVERTISE_INTERFACE=eth1 justinbarrick/civitas:dev
 EOF
 }
 

@@ -32,6 +32,7 @@ func (s *Serf) Start() (err error) {
 
 	serfConfig := serf.DefaultConfig()
 	serfConfig.MemberlistConfig.BindPort = s.Port
+	serfConfig.MemberlistConfig.BindAddr = s.Addr
 	serfConfig.MemberlistConfig.AdvertisePort = s.Port
 	serfConfig.MemberlistConfig.AdvertiseAddr = s.Addr
 	serfConfig.NodeName = s.Name
