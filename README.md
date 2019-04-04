@@ -78,8 +78,9 @@ role is. The only information they will know is the number of expected initial n
 Using some mechanism, each node will discover the address of other nodes. There are a
 number of means to accomplish this:
 
-* [mDNS](https://en.wikipedia.org/wiki/Multicast_DNS) can be used on a LAN.
-* Cloud provider labels can be used, if the nodes have access to a cloud provider.
+* [mDNS](https://github.com/hashicorp/mdns) can be used on a LAN.
+* [Cloud provider labels](https://github.com/hashicorp/go-discover) can be used, if
+  the nodes have access to a cloud provider.
 * [IPFS](https://github.com/ipfs/notes/issues/15) can be used to discover nodes
   that are not on the same LAN. This mechanism will be expanded on later.
 

@@ -10,16 +10,20 @@ import (
 
 type Serf struct {
 	Name         string
+	Addr         string
 	Port         int
 	JoinCallback func(serf.MemberEvent)
+	bootstrapAddrs []string
 	events       chan serf.Event
 	serf         *serf.Serf
 }
 
-func NewSerf(name string, port int) *Serf {
+func NewSerf(name string, addr string, port int) *Serf {
 	return &Serf{
 		Name: name,
+		Addr: addr,
 		Port: port,
+		bootstrapAddrs: []string{},
 	}
 }
 
@@ -29,6 +33,7 @@ func (s *Serf) Start() (err error) {
 	serfConfig := serf.DefaultConfig()
 	serfConfig.MemberlistConfig.BindPort = s.Port
 	serfConfig.MemberlistConfig.AdvertisePort = s.Port
+	serfConfig.MemberlistConfig.AdvertiseAddr = s.Addr
 	serfConfig.NodeName = s.Name
 	serfConfig.EventCh = s.events
 
@@ -39,7 +44,7 @@ func (s *Serf) Start() (err error) {
 
 	s.serf, err = serf.Create(serfConfig)
 
-	log.Println("serf listening at:", s.Port)
+	log.Printf("serf listening at: %s:%d\n", s.Addr, s.Port)
 
 	go func() {
 		for event := range s.events {
@@ -55,15 +60,17 @@ func (s *Serf) Start() (err error) {
 	return
 }
 
-func (s *Serf) Join(bootstrapAddrs []string) {
+func (s *Serf) AddNode(addr string) {
+	s.bootstrapAddrs = append(s.bootstrapAddrs, addr)
+}
+
+func (s *Serf) Join() {
 	for {
-		if _, err := s.serf.Join(os.Args[3:], false); err != nil {
+		if _, err := s.serf.Join(s.bootstrapAddrs, false); err != nil {
 			log.Println(err)
-			time.Sleep(2 * time.Second)
-			continue
 		}
 
-		break
+		time.Sleep(2 * time.Second)
 	}
 }
 

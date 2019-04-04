@@ -7,6 +7,7 @@ import (
 	"github.com/justinbarrick/civitas/pkg/util"
 	"log"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 	var port = flag.Int("port", 1234, "the port to bind to for p2p activity")
 	var nodeName = flag.String("name", hostName, "the identifier to use for this node")
 	var controlPlaneIP = flag.String("control-plane-ip", "127.0.13.37", "IP address to bind the control plane load balancer to on each node.")
+	var mdnsService = flag.String("mdns-service", os.Getenv("MDNS_SERVICE"), "The mDNS service to broadcast.")
 	flag.Parse()
 
 	if *iface != "" {
@@ -38,9 +40,22 @@ func main() {
 
 	log.Println("joining cluster as", *nodeName, "advertising", *address)
 
-	cluster := cluster.NewCluster(*nodeName, *address, *port, *numInitialNodes)
+	discoveryConfig := flag.Args()
+	envDiscovery := os.Getenv("DISCOVERY_CONFIG")
+	if envDiscovery != "" {
+		discoveryConfig = append(discoveryConfig, strings.Split(envDiscovery, "\n")...)
+	}
 
-	if err = cluster.Start(flag.Args()); err != nil {
+	cluster := &cluster.Cluster{
+		NodeName: *nodeName,
+		Addr: *address,
+		Port: *port,
+		NumInitialNodes: *numInitialNodes,
+		MDNSService: *mdnsService,
+		DiscoveryConfig: discoveryConfig,
+	}
+
+	if err = cluster.Start(); err != nil {
 		log.Fatal(err)
 	}
 

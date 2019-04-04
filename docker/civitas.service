@@ -4,7 +4,10 @@ After=network.target
 
 [Service]
 Type=exec
-ExecStart=/usr/bin/civitas -interface eth0 192.168.48.4:1234
+PassEnvironment=DISCOVERY_CONFIG
+PassEnvironment=MDNS_SERVICE
+PassEnvironment=ADVERTISE_INTERFACE
+ExecStart=/usr/bin/civitas -interface $ADVERTISE_INTERFACE
 
 [Install]
 WantedBy=multi-user.target

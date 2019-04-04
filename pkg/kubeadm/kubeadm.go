@@ -243,12 +243,12 @@ func (k *Kubeadm) SetCluster(cluster *cluster.Cluster) {
 }
 
 func (k *Kubeadm) IsBootstrap() bool {
-	return k.Masters[0] == k.cluster.NodeName()
+	return k.Masters[0] == k.cluster.NodeName
 }
 
 func (k *Kubeadm) IsMaster() bool {
 	for _, master := range k.Masters {
-		if master == k.cluster.NodeName() {
+		if master == k.cluster.NodeName {
 			return true
 		}
 	}

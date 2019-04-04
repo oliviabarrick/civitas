@@ -8,20 +8,18 @@ replace github.com/google/tcpproxy => github.com/yangchenyun/tcpproxy v0.0.0-201
 
 require (
 	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/google/tcpproxy v0.0.0-00010101000000-000000000000
+	github.com/hashicorp/go-discover v0.0.0-20190403160810-22221edb15cd
 	github.com/hashicorp/go-msgpack v0.5.3
+	github.com/hashicorp/mdns v1.0.0
 	github.com/hashicorp/raft v1.0.0
 	github.com/hashicorp/serf v0.8.2
 	github.com/hkwi/nlgo v0.0.0-20170629055117-dbae43f4fc47 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/minio/dsync v0.0.0-20190131060523-fb604afd87b2
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/mqliang/libipvs v0.0.0-20181031074626-20f197c976a3
 	github.com/pkg/errors v0.8.1 // indirect
 	golang.org/x/net v0.0.0-20190328230028-74de082e2cca // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2 // indirect
 	k8s.io/api v0.0.0-20190327184913-92d2ee7fc726 // indirect
 	k8s.io/apimachinery v0.0.0-20190328224500-e508a7b04a89

@@ -1,0 +1,18 @@
+version: '2.4'
+
+services:
+  node:
+    build:
+      context: ../../
+      dockerfile: docker/Dockerfile
+    privileged: true
+    scale: 3
+    environment:
+      MDNS_SERVICE: civitas
+      ADVERTISE_INTERFACE: eth0
+    tmpfs:
+    - /run
+    - /run/lock
+    volumes:
+    - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    - ../../civitas:/usr/bin/civitas:ro

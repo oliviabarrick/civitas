@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y apt-transport-https curl gnupg2 softwar
     add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" && \
     add-apt-repository "deb [arch=amd64] https://apt.kubernetes.io/ kubernetes-xenial main"
 RUN apt-get update && apt-get install -y kubelet kubeadm kubectl docker-ce docker-ce-cli containerd.io iptables
-COPY 10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-COPY civitas.service /etc/systemd/system/civitas.service
+COPY docker/10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+COPY docker/civitas.service /etc/systemd/system/civitas.service
 RUN systemctl enable kubelet docker civitas
+COPY civitas /usr/bin/civitas
+ENTRYPOINT ["/sbin/init"]
